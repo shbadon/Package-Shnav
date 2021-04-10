@@ -8,3 +8,4 @@ export 'src/sh_nav_manager.dart';
 export 'src/sh_nav_page_model.dart';
 export 'src/sh_nav_parser.dart';
 export 'src/sh_nav_path_model.dart';
+export 'src/context_extensions.dart';
