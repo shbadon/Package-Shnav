@@ -5,8 +5,8 @@ import 'package:shnav/src/sh_nav_page_model.dart';
 
 class ShNavDelegate extends RouterDelegate<Uri>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<Uri> {
-  final List<NavPageModel> pages;
   final NavPage notFoundPage;
+  final List<NavPageModel> pages;
   final Function(Uri)? navNotifier;
 
   late ShNavManager routeManager;
