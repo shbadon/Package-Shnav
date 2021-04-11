@@ -112,6 +112,9 @@ class ShNavManager extends ChangeNotifier {
   Future<void> pushWithQueryPara(String path, dynamic para, {dynamic params}) =>
       _setNewRoutePath(Uri(path: path, queryParameters: para), params, false);
 
+  /// it work for manually send not found page
+  /// use:- context.shNav.sendNotFoundPage(Uri(path:'/books'));
+
   Future<void> sendNotFoundPage(Uri uri, {dynamic params}) =>
       _setNewRoutePath(uri, params, true);
 
