@@ -47,9 +47,10 @@ class ShNavManager extends ChangeNotifier {
   /// this Function control page
   Future<void> _setNewRoutePath(
       Uri uri, dynamic params, bool sentNotFoundPage) {
-    bool _findRoute = false;
     setNavNotifier(uri);
     if (!sentNotFoundPage) {
+      bool _findRoute = false;
+
       /// here set all page
       for (int i = 0; i < initializePathList.length; i++) {
         final path = initializePathList[i].path;
@@ -74,10 +75,16 @@ class ShNavManager extends ChangeNotifier {
           break;
         }
       }
-    }
 
-    /// set not found page here
-    if (!_findRoute || sentNotFoundPage) {
+      /// set not found page here
+      if (!_findRoute) {
+        final page = notFoundPage;
+        page.setFunction(uri, params);
+        _pages.add(page);
+        _uris.add(uri);
+        setTitle(uri, true);
+      }
+    } else {
       final page = notFoundPage;
       page.setFunction(uri, params);
       _pages.add(page);
