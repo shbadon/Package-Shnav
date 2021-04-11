@@ -8,8 +8,6 @@ import 'package:shnav/src/sh_nav_page.dart';
 import 'package:shnav/src/sh_nav_page_model.dart';
 import 'package:shnav/src/sh_nav_path_model.dart';
 
-
-
 class ShNavManager extends ChangeNotifier {
   final List<NavPageModel> allPages;
   final NavPage notFoundPage;
@@ -47,37 +45,39 @@ class ShNavManager extends ChangeNotifier {
 
   /// here is main function
   /// this Function control page
-  Future<void> _setNewRoutePath(Uri uri, dynamic params) {
+  Future<void> _setNewRoutePath(
+      Uri uri, dynamic params, bool sentNotFoundPage) {
     bool _findRoute = false;
     setNavNotifier(uri);
+    if (!sentNotFoundPage) {
+      /// here set all page
+      for (int i = 0; i < initializePathList.length; i++) {
+        final path = initializePathList[i].path;
+        if (path == uri.path) {
+          // if (_uris.contains(uri)) {
+          //   final position = _uris.indexOf(uri);
+          //   final _urisLength = _uris.length;
+          //   for (var start = position; start < _urisLength - 1; start++) {
+          //     _pages.removeLast();
+          //     _uris.removeLast();
+          //   }
+          //   _findRoute = true;
+          //   break;
+          // }
 
-    /// here set all page
-    for (int i = 0; i < initializePathList.length; i++) {
-      final path = initializePathList[i].path;
-      if (path == uri.path) {
-        if (_uris.contains(uri)) {
-          final position = _uris.indexOf(uri);
-          final _urisLength = _uris.length;
-          for (var start = position; start < _urisLength - 1; start++) {
-            _pages.removeLast();
-            _uris.removeLast();
-          }
+          final page = initializePageList[i];
+          page.setFunction(uri, params);
+          _pages.add(page);
+          _uris.add(uri);
+          setTitle(uri, false);
           _findRoute = true;
           break;
         }
-
-        final page = initializePageList[i];
-        page.setFunction(uri, params);
-        _pages.add(page);
-        _uris.add(uri);
-        setTitle(uri, false);
-        _findRoute = true;
-        break;
       }
     }
 
     /// set not found page here
-    if (!_findRoute) {
+    if (!_findRoute || sentNotFoundPage) {
       final page = notFoundPage;
       page.setFunction(uri, params);
       _pages.add(page);
@@ -97,7 +97,8 @@ class ShNavManager extends ChangeNotifier {
   //                    );
   //                  }
 
-  Future<void> push(Uri uri, {dynamic params}) => _setNewRoutePath(uri, params);
+  Future<void> push(Uri uri, {dynamic params}) =>
+      _setNewRoutePath(uri, params, false);
 
   /// [pushWithQueryPara] work for navigate and send some dynamic data.
   /// use:- context.shNav.pushWithQueryPara('/books', {'id':'1'});
@@ -109,7 +110,10 @@ class ShNavManager extends ChangeNotifier {
   //               }
 
   Future<void> pushWithQueryPara(String path, dynamic para, {dynamic params}) =>
-      _setNewRoutePath(Uri(path: path, queryParameters: para), params);
+      _setNewRoutePath(Uri(path: path, queryParameters: para), params, false);
+
+  Future<void> sendNotFoundPage(Uri uri, {dynamic params}) =>
+      _setNewRoutePath(uri, params, true);
 
   ///pop
   void pop() {
@@ -149,7 +153,7 @@ class ShNavManager extends ChangeNotifier {
   Future<void> replace(Uri uri, {dynamic params}) {
     _pages.removeAt(_pages.length - 1);
     _uris.removeAt(_uris.length - 1);
-    return _setNewRoutePath(uri, params);
+    return _setNewRoutePath(uri, params, false);
   }
 
   /// clear the list of [pages] and then push an [Uri]
