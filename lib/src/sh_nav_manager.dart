@@ -3,17 +3,18 @@ import 'dart:collection';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shnav/src/sh_nav_auth_protection_model.dart';
 import 'package:shnav/src/sh_nav_list_holder.dart';
 import 'package:shnav/src/sh_nav_page.dart';
 import 'package:shnav/src/sh_nav_page_model.dart';
 import 'package:shnav/src/sh_nav_path_model.dart';
 
 class ShNavManager extends ChangeNotifier {
-  final List<NavPageModel> allPages;
+  final List<ShNavPage> allPages;
   final NavPage notFoundPage;
   final Function(Uri)? navNotifier;
 
-  final List<PathModel> initializePathList = [];
+  final List<PathModel> initializePathModelList = [];
   final initializeTitleList = [];
   final initializeUriList = [];
   final initializePageList = [];
@@ -22,23 +23,29 @@ class ShNavManager extends ChangeNotifier {
       {required this.allPages, required this.notFoundPage, this.navNotifier}) {
     /// this for loop work for divided allPage list
     for (int i = 0; i < allPages.length; i++) {
-      final path = allPages[i].path;
-      final page = allPages[i].page;
-      final title = allPages[i].title;
-      initializePathList.add(PathModel(path));
-      initializeTitleList.add(title);
-      initializePageList.add(page);
+      final allPage = allPages[i];
+      initializePathModelList.add(PathModel(
+        path: allPage.path,
+        authProtection:
+            allPage.protection.getProtection == Protection.on ? true : false,
+        authPagePath: allPage.protection.getAuthPagePath,
+        authentication: allPage.protection.getAuthentication,
+      ));
+      initializeTitleList.add(allPage.title);
+      initializePageList.add(allPage.page);
     }
   }
 
   /// this two from ListHolder page.
   final _pages = ListHolder().createState().pagesList;
   final _uris = ListHolder().createState().urisList;
+
   // final _pages = <Page>[];
   // final _uris = <Uri>[];
 
   /// this two list call from ShNavDelegate
   List<Page> get pages => UnmodifiableListView(_pages);
+
   List<Uri> get uris => UnmodifiableListView(_uris);
 
   late Completer<dynamic> _boolResultCompleter;
@@ -52,9 +59,37 @@ class ShNavManager extends ChangeNotifier {
       bool _findRoute = false;
 
       /// here set all page
-      for (int i = 0; i < initializePathList.length; i++) {
-        final path = initializePathList[i].path;
-        if (path == uri.path) {
+      for (int i = 0; i < initializePathModelList.length; i++) {
+        final pathModel = initializePathModelList[i];
+        if (pathModel.path == uri.path) {
+          if (pathModel.authProtection) {
+            if (pathModel.authentication) {
+              final page = initializePageList[i];
+              page.setFunction(uri, params);
+              _pages.add(page);
+              _uris.add(uri);
+              setTitle(uri, false);
+              _findRoute = true;
+              break;
+            } else {
+              final page = initializePageList[i];
+              final pathModelUri = Uri(path: pathModel.authPagePath);
+              page.setFunction(pathModelUri, params);
+              _pages.add(page);
+              _uris.add(pathModelUri);
+              setTitle(pathModelUri, false);
+              _findRoute = true;
+              break;
+            }
+          } else {
+            final page = initializePageList[i];
+            page.setFunction(uri, params);
+            _pages.add(page);
+            _uris.add(uri);
+            setTitle(uri, false);
+            _findRoute = true;
+            break;
+          }
           // if (_uris.contains(uri)) {
           //   final position = _uris.indexOf(uri);
           //   final _urisLength = _uris.length;
@@ -66,13 +101,6 @@ class ShNavManager extends ChangeNotifier {
           //   break;
           // }
 
-          final page = initializePageList[i];
-          page.setFunction(uri, params);
-          _pages.add(page);
-          _uris.add(uri);
-          setTitle(uri, false);
-          _findRoute = true;
-          break;
         }
       }
 
@@ -137,8 +165,8 @@ class ShNavManager extends ChangeNotifier {
   /// [setTitle] work for set Page Title
   void setTitle(Uri uri, bool unknown) {
     if (!unknown) {
-      for (int i = 0; i < initializePathList.length; i++) {
-        final path = initializePathList[i].path;
+      for (int i = 0; i < initializePathModelList.length; i++) {
+        final path = initializePathModelList[i].path;
         if (path == uri.path) {
           SystemChrome.setApplicationSwitcherDescription(
             ApplicationSwitcherDescription(
